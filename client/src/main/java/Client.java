@@ -17,7 +17,6 @@ public class Client {
                 if (lineReceived == null || lineReceived.isEmpty()) {
                     break;
                 }
-                System.out.println(lineReceived);
             }
             sendOutput.close();
 
