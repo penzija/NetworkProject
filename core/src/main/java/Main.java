@@ -5,6 +5,8 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -17,11 +19,13 @@ public class Main {
 
         try (ServerSocket socket = new ServerSocket(5051)) {
             while (true) {
-                Socket theClient = socket.accept();
-                System.out.println(Thread.currentThread().getName());
-//                Thread thread = new Thread(() -> connectionHandling(theClient));
-//                thread.start();
-                executorService.submit(() -> connectionHandling(theClient));
+                Socket connectedClient = socket.accept();
+
+                System.out.println("THREAD --> " + Thread.currentThread().getName());
+                InetAddress ipAddress = connectedClient.getInetAddress();
+                System.out.println("CONNECTION FROM IP ADDRESS --> " + ipAddress);
+
+                executorService.submit(() -> connectionHandling(connectedClient));
             }
         } catch (
                 IOException e) {
@@ -29,59 +33,83 @@ public class Main {
         }
     }
 
-    private static void connectionHandling(Socket clientRequest) {
+    private static void connectionHandling(Socket connectedClient) {
         try {
-//            System.out.println(this.getClass().getName());
-            InetAddress ipAddress = clientRequest.getInetAddress();
-            System.out.println("IP ADDRESS: " + ipAddress);
-            System.out.println();
+            BufferedReader inputFromClient = new BufferedReader(new InputStreamReader(connectedClient.getInputStream()));
+            OutputStream outputToClient = connectedClient.getOutputStream();
 
-//            InputStream inputFromClient = clientRequest.getInputStream();
-//            System.out.println(inputFromClient);
-//            System.out.println();
+            String clientMessage = inputFromClient.readLine();
 
-            BufferedReader inputFromClient2 = new BufferedReader(new InputStreamReader(clientRequest.getInputStream()));
-            readRequest(inputFromClient2);
-//
-            OutputStream outputToClient = clientRequest.getOutputStream();
-            sendResponse(outputToClient);
+            System.out.println("CLIENT MESSAGE --> ' " + clientMessage + " '\n");
 
-            clientRequest.close();
-//            inputFromClient.close();
-            inputFromClient2.close();
+            if ((clientMessage.split(" ")[1]).equals("/cat.png")) {
+                System.out.print("CAT PICTURE REQUESTED --> ");
+                sendImageResponse(outputToClient);
+            }
+            sendJsonResponse(outputToClient);
+
+            connectedClient.close();
+            inputFromClient.close();
             outputToClient.close();
+//            inputFromClient.lines().forEach(System.out::println); //problem här
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private static void readRequest(BufferedReader inputFromClient2) throws IOException {
-//        inputFromClient2.lines().forEach(System.out::println); //problem här
-
-        while (true) {
-            String lineReceived = inputFromClient2.readLine();
-            if (lineReceived == null || lineReceived.isEmpty()) {
-                break;
-            }
-            System.out.println(lineReceived);
-        }
-    }
-
-    private static void sendResponse(OutputStream outputToClient) throws IOException {
-//        outputToClient.print("HTTP/1.1 404 Not found\r\nContent-length: 0\r\n\r\n");
+    private static void sendJsonResponse(OutputStream outputToClient) throws IOException {
+        Gson gson = new Gson();
 
         List<Person> persons = new ArrayList<>();
         persons.add(new Person("Luka", 22, true));
         persons.add(new Person("Luka", 22, true));
         persons.add(new Person("Luka", 22, true));
-        Gson gson = new Gson();
 
-        String json = gson.toJson(persons);
-        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        String header = "HTTP/1.1 200 OK\r\nContent-type: application/json\r\nContent-length: " + bytes.length + "\r\n\r\n";
+        String jsonContentInText = gson.toJson(persons);
+        byte[] jsonContentInBinary = jsonContentInText.getBytes(StandardCharsets.UTF_8);
+
+        String header = "HTTP/1.1 200 OK\r\nContent-type: application/json\r\nContent-length: " + jsonContentInBinary.length + "\r\n\r\n";
 
         outputToClient.write(header.getBytes());
-        outputToClient.write(bytes);
+        outputToClient.write(jsonContentInBinary);
         outputToClient.flush();
     }
+
+    private static void sendImageResponse(OutputStream outputToClient) throws IOException {
+        String header = "";
+        byte[] data = new byte[0];
+        File catFile = Path.of("core", "target", "web", "cat.png").toFile();
+        Gson gson = new Gson();
+
+        String contentType = Files.probeContentType(catFile.toPath());
+        System.out.println(contentType);
+
+        if (!(catFile.exists() && !catFile.isDirectory())) {
+            header = "HTTP/1.1 404 Not found\r\nContent-length: 0\r\n\r\n";
+            System.out.println("FILE NOT FOUND");
+        } else {
+
+            try (FileInputStream fileInputStream = new FileInputStream(catFile)) {
+                data = new byte[(int) catFile.length()];
+                int read = fileInputStream.read(data);
+                header = "HTTP/1.1 200 OK\r\nContent-type: " + contentType + "\r\nContent-length: " + data.length + "\r\n\r\n";
+                System.out.println();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        outputToClient.write(header.getBytes());
+        outputToClient.write(data);
+        outputToClient.flush();
+    }
+    //            System.out.println(this.getClass().getName());
+//            InputStream inputFromClient = connectedClient.getInputStream();
+//            System.out.println(inputFromClient);
+//            System.out.println();
+    //            String urlContent = streamFromClient.readLine();
+
+//                Thread thread = new Thread(() -> connectionHandling(theClient));
+//                thread.start();
+
+    //        outputToClient.print("HTTP/1.1 404 Not found\r\nContent-length: 0\r\n\r\n");
 }
