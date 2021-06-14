@@ -46,6 +46,10 @@ public class Main {
                 System.out.print("CAT PICTURE REQUESTED --> ");
                 sendImageResponse(outputToClient);
             }
+            if ((clientMessage.split(" ")[1]).equals("/index.html")) {
+                System.out.print("HTML PICTURE REQUESTED --> ");
+                sendHtmlResponse(outputToClient);
+            }
             sendJsonResponse(outputToClient);
 
             connectedClient.close();
@@ -101,14 +105,32 @@ public class Main {
         outputToClient.write(data);
         outputToClient.flush();
     }
-    //            System.out.println(this.getClass().getName());
-//            InputStream inputFromClient = connectedClient.getInputStream();
-//            System.out.println(inputFromClient);
-//            System.out.println();
-    //            String urlContent = streamFromClient.readLine();
+    private static void sendHtmlResponse(OutputStream outputToClient) throws IOException {
+        String header = "";
+        byte[] data = new byte[0];
+        File htmlFile = Path.of("core", "target", "web", "index.html").toFile();
+        Gson gson = new Gson();
 
-//                Thread thread = new Thread(() -> connectionHandling(theClient));
-//                thread.start();
+        String contentType = Files.probeContentType(htmlFile.toPath());
+        System.out.println(contentType);
 
-    //        outputToClient.print("HTTP/1.1 404 Not found\r\nContent-length: 0\r\n\r\n");
+        if (!(htmlFile.exists() && !htmlFile.isDirectory())) {
+            header = "HTTP/1.1 404 Not found\r\nContent-length: 0\r\n\r\n";
+            System.out.println("FILE NOT FOUND");
+        } else {
+
+            try (FileInputStream fileInputStream = new FileInputStream(htmlFile)) {
+                data = new byte[(int) htmlFile.length()];
+                int read = fileInputStream.read(data);
+                header = "HTTP/1.1 200 OK\r\nContent-type: " + contentType + "\r\nContent-length: " + data.length + "\r\n\r\n";
+                System.out.println();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        outputToClient.write(header.getBytes());
+        outputToClient.write(data);
+        outputToClient.flush();
+    }
+
 }

@@ -7,7 +7,7 @@
         <class>database.Person</class>
         <properties>
             <property name="jakarta.persistence.jdbc.url"
-                      value="jdbc:mysql://localhost:3306/persondb2?zeroDateTimeBehavior=convertToNull"/>
+                      value="jdbc:mysql://localhost:3306/persondb3?zeroDateTimeBehavior=convertToNull&amp;createDatabaseIfNotExist=true"/>
             <property name="jakarta.persistence.jdbc.password" value="root"/>
             <property name="jakarta.persistence.jdbc.driver" value="com.mysql.jdbc.Driver"/>
             <property name="jakarta.persistence.jdbc.user" value="root"/>
