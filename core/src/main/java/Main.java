@@ -1,4 +1,6 @@
 import com.google.gson.Gson;
+import database.*;
+import database.Person;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -46,7 +48,23 @@ public class Main {
                 System.out.print("CAT PICTURE REQUESTED --> ");
                 sendImageResponse(outputToClient);
             }
-            sendJsonResponse(outputToClient);
+
+            Database database = new Database();
+
+            Person p = new Person("Martin");
+            List<Person> persons = database.showAll();
+            persons.add(p);
+            for (Person x : persons) {
+                System.out.println(x);
+            }
+
+            System.out.println("Please work");
+
+
+
+
+
+//            sendJsonResponse(outputToClient);
 
             connectedClient.close();
             inputFromClient.close();
@@ -60,18 +78,14 @@ public class Main {
     private static void sendJsonResponse(OutputStream outputToClient) throws IOException {
         Gson gson = new Gson();
 
-        List<Person> persons = new ArrayList<>();
-        persons.add(new Person("Luka", 22, true));
-        persons.add(new Person("Luka", 22, true));
-        persons.add(new Person("Luka", 22, true));
 
-        String jsonContentInText = gson.toJson(persons);
-        byte[] jsonContentInBinary = jsonContentInText.getBytes(StandardCharsets.UTF_8);
+        // String jsonContentInText = gson.toJson(p);
+        //  byte[] jsonContentInBinary = jsonContentInText.getBytes(StandardCharsets.UTF_8);
 
-        String header = "HTTP/1.1 200 OK\r\nContent-type: application/json\r\nContent-length: " + jsonContentInBinary.length + "\r\n\r\n";
+        String header = "HTTP/1.1 200 OK\r\nContent-type: application/json\r\nContent-length: 0"  /*jsonContentInBinary.length*/ + "\r\n\r\n";
 
         outputToClient.write(header.getBytes());
-        outputToClient.write(jsonContentInBinary);
+        // outputToClient.write(jsonContentInBinary);
         outputToClient.flush();
     }
 
