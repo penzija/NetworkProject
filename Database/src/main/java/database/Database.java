@@ -13,10 +13,10 @@ public class Database {
         EntityManager em = emf.createEntityManager();
 
         TypedQuery<Person> q = em.createQuery("SELECT p FROM Person p", Person.class);
-        List<Person> c = q.getResultList();
+        List<Person> persons = q.getResultList();
 
         em.close();
-        return c;
+        return persons;
     }
 
 }

@@ -6,10 +6,8 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -48,23 +46,7 @@ public class Main {
                 System.out.print("CAT PICTURE REQUESTED --> ");
                 sendImageResponse(outputToClient);
             }
-
-            Database database = new Database();
-
-            Person p = new Person("Martin");
-            List<Person> persons = database.showAll();
-            persons.add(p);
-            for (Person x : persons) {
-                System.out.println(x);
-            }
-
-            System.out.println("Please work");
-
-
-
-
-
-//            sendJsonResponse(outputToClient);
+            sendJsonResponse(outputToClient);
 
             connectedClient.close();
             inputFromClient.close();
@@ -77,15 +59,18 @@ public class Main {
 
     private static void sendJsonResponse(OutputStream outputToClient) throws IOException {
         Gson gson = new Gson();
+        Database database = new Database();
+        List<Person> persons = database.showAll();
 
+        persons.add(new Person("Luka"));
 
-        // String jsonContentInText = gson.toJson(p);
-        //  byte[] jsonContentInBinary = jsonContentInText.getBytes(StandardCharsets.UTF_8);
+        String jsonContentInText = gson.toJson(persons);
+        byte[] jsonContentInBinary = jsonContentInText.getBytes();
 
-        String header = "HTTP/1.1 200 OK\r\nContent-type: application/json\r\nContent-length: 0"  /*jsonContentInBinary.length*/ + "\r\n\r\n";
+        String header = "HTTP/1.1 200 OK\r\nContent-type: application/json\r\nContent-length: " + jsonContentInBinary.length + "\r\n\r\n";
 
         outputToClient.write(header.getBytes());
-        // outputToClient.write(jsonContentInBinary);
+        outputToClient.write(jsonContentInBinary);
         outputToClient.flush();
     }
 
